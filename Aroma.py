@@ -4,8 +4,23 @@ Date: 2023-11-06
 Course: CSCI 2910 
 Document Name: Aroma.py
 
-This is the logic python file..?
-
-
 
 '''
+import discord
+from discord.ext import commands
+
+#Create a bot instance
+bot = commands.Bot(command_prefix='!')
+
+#Print a message when Aroma is ready
+@bot.event
+async def on_ready(): 
+    print(f'Logged in as {bot.user.name}')
+
+# Greetings 
+@bot.command()
+async def hello(ctx): 
+    await ctx.send('Hiii :3')
+
+#Run the bot with token
+bot.run('MTE3MTI3NTA5OTMxMjIzNDU3OQ.GYu-qL.srku4lpEbRLBViDzsOSsuq6R8b77p_S8XrW6CYs')
