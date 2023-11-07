@@ -23,4 +23,4 @@ async def hello(ctx):
     await ctx.send('Hiii :3')
 
 #Run the bot with token
-bot.run('MTE3MTI3NTA5OTMxMjIzNDU3OQ.GYu-qL.srku4lpEbRLBViDzsOSsuq6R8b77p_S8XrW6CYs')
+bot.run('MTE3MTI3NTA5OTMxMjIzNDU3OQ.GDem8Q.PUWpU2ByHR9sbpUD4IZkKXzNWciIzuriyZDv9A')
