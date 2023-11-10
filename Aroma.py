@@ -11,8 +11,11 @@ from discord.ext import commands
 import random
 from CookingTips import cooking_tips
 import requests
+from RecipeList import Recipe_List
+from RecipeList import Seasonal_List
 
-#Json Stuff
+
+'''#Json Stuff
 response = requests.get('https://www.themealdb.com/api/json/v1/1/search.php?f=a')
 print(response.status_code)
 print(response.json())
@@ -30,6 +33,26 @@ for meal in meals:
     print("**Meal Category**:", MealCategory)
     print("**Meal Origins**:", MealArea)
     print("**Meal Description**:", MealDescription)
+'''
+
+response = requests.get('https://opentdb.com/api.php?amount=50')
+print(response.status_code)
+print(response.json())
+
+response_data = response.json()
+Questions = response_data =['trivia_questions']
+
+for question in Questions:
+    Category = response.json()['category'][0]['category']
+    Questions = response.json()['question'][0]['question']
+    CorrectAnswer = response.json()['correctAnswer'][0]['correct_answer']
+    IncorrectAnswers = response.json()['incorrectAnswer'][0]['incorrect_answers']
+
+    print("**Category**:", Category)
+    print("**Question**:", Questions)
+    print("**Correct Answer**:", CorrectAnswer)
+    print("**Incorrect Answers**:", IncorrectAnswers)
+
 
 #Create a bot instance
 intents = discord.Intents.all()
@@ -53,20 +76,30 @@ Check out these command delicacies:
 • `!commands` - Display all of my usable commands at any time.
 • `!bonjour` - Come say hi to me! (You could get some XP . . . just saying.) 😄
 • `!aboutAroma` - Learn more about me. 📖
-• `!tips` - Randomly unlock kitchen secrets to discover cooking tips. 🍳✨
+• `!tips` - Randomly unlock kitchen secrets to discover cooking tips. 🍳✨• `!tips` - Randomly unlock kitchen secrets to discover cooking tips. 🍳✨
+• `!getRecipes` - Want to find a recipe? Use this command to get our DM started! 🍕🌮 
+• `!xp` - Find out how much XP you have. 🎮
+• `!leaderboard` - Explore your XP ranking among chefs. 🏆
+
+
 '''
   #add more later
 
 #command_msg = f"Check out these command delicacies:\n" + "-----Aroma Commands-----\n" + "\n".join(command_list)
-    
+
+
 @bot.command()
 async def commands(ctx):
     await ctx.send(f"{ctx.author.mention} \n {command_list}")
 
+#bot will say bonjour
 @bot.command()
 async def bonjour(ctx): 
     await ctx.send(f'Bonjour {ctx.author.mention}! :3')
 
+    await ctx.message.add_reaction('❤️')
+
+#bot will provide mission statement
 @bot.command() 
 async def aboutAroma(ctx): 
     mission_statement = (
@@ -84,6 +117,7 @@ async def aboutAroma(ctx):
     )
     await ctx.send(f"{ctx.author.mention} \n {mission_statement}")
 
+#bot will randomly display tips
 @bot.command()
 async def tips(ctx): 
     origin_channel = bot.get_channel(1171269987525197837)
@@ -94,12 +128,91 @@ async def tips(ctx):
         if last_hyphen_index != -1:
             tip = random_tip[:last_hyphen_index].strip()  # Extract the tip
             author = random_tip[last_hyphen_index + 1:].strip()  # Extract the author
-            tip_message = f"🍳 Cooking Tip 🍳\n\n**Tip**: {tip}\n\n**Author**: {author}"
+            tip_message = f"🍳 **Cooking Tip** 🍳\n\n**Tip**: {tip}\n\n**Author**: {author}"
             await ctx.send(f"{ctx.author.mention}, \n {tip_message}")
         
-    '''random_tip = random.choice(cooking_tips)
-        await ctx.send(f"{ctx.author.mention}, here's a cooking tip: \n {random_tip}")'''
+#uhhh bot will do something    
+@bot.command()
+async def recipelist(ctx): 
+ await ctx.send(f"{ctx.author.mention} \n {Recipe_List}")
 
+@bot.command()
+async def seasonallist(ctx): 
+ await ctx.send(f"{ctx.author.mention} \n {Seasonal_List}")
+
+
+#bot will start the recipe dm process
+@bot.command()
+async def getRecipes(ctx):
+
+   
+        user = ctx.author
+
+        initial_msg = (
+        "🍲 **Welcome to the Recipe Search!**🍳\n\n"
+        "** [NOTE]: Replace <ingredient> with YOUR ingredient . . .(e.g. Broccoli) ** \n"
+        "To search for a recipe, use the following commands:\n"
+        "- `!searchByIngredient <ingredient>` - Search recipes by ingredients you have on hand 🥦\n"
+        "- `!searchByCuisine <cuisine>` - Search recipes by cuisines from all over the world! 🌎\n"
+        "- `!searchByName <name>` - Search recipes by name (e.g. Apple Pie) 🍽️\n"
+        "- `!searchByCategory <category>` - Search recipes based on category (e.g. seafood, pork, beef, etc.)\n"
+        "- `!seasonalRecipe` - Stay updated with trending seasonal dishes! 🎲\n"
+
+        )
+        #send the dm 
+        await user.send(initial_msg)
+
+
+#bot will search by ingredient
+@bot.command()
+async def searchByIngredient(ctx):
+    await ctx.send("Search is unavailable.")
+
+#bot will search by cuisine
+@bot.command()
+async def searchByCuisine(ctx):
+    await ctx.send("Search is unavailable.")
+
+#bot will search by dish name
+@bot.command()
+async def searchByName(ctx):
+    await ctx.send("Search is unavailable.")
+
+#bot will search by category
+@bot.command()
+async def searchByCategory(ctx):
+    await ctx.send("Search is unavailable.")
+
+#bot will display seasonal recipe
+@bot.command()
+async def seasonalRecipe(ctx):
+    await ctx.send("Unavailable.")
+
+@bot.command()
+async def xp(ctx, member: discord.Member = None):
+    if not member:
+        member = ctx.author
+
+    user_id = member.id
+    xp = user_xp_data.get(user_id, 0)
+
+    await ctx.send(f"{member.display_name} has {xp} XP!")
+
+@bot.command()
+async def leaderboard(ctx):
+    # Sort users by XP in descending order
+    users = ctx.guild.members
+
+    sorted_users = sorted(users, key=lambda user: user_xp_data.get(user.id, 0), reverse=True)
+
+    # Create a formatted leaderboard
+    leaderboard_msg = "🏆 **Aroma XP Leaderboard** 🏆\n\n"
+
+    for index, user in enumerate(sorted_users[:10], start=1):
+        xp = user_xp_data.get(user.id, 0)
+        leaderboard_msg += f"{index}. {user.display_name}: {xp} XP\n"
+    # Send the leaderboard to the channel
+    await ctx.send(leaderboard_msg)
 
 #-------------------------------------------
 #BOT EVENTS
@@ -134,8 +247,98 @@ async def on_member_join(member):
         await origin_channel.send(welcome_msg)
         await origin_channel.send(command_msg)
 
+
+#BEGIN IMPLEMENTING THE XP SYSTEM (EVENTS AND COMMANDS)     
+
+XP_PER_MESSAGE = 5
+XP_SEARCH_REWARD = 20
+XP_REACT = 15
+#XP_TRIVIA_SCORE = 0
+user_xp_data = {}
+xp_commands = ['!searchByIngredient', '!searchByCuisine', '!searchByName', '!searchByCategory', '!seasonalRecipe']
+
+
+@bot.event
+async def on_message(message):
+    server = message.guild
+    author = message.author
+
+    if message.author.bot:
+        return  # Ignore messages from bots
+
+    # Check if the message command should count for XP
+    if any(message.content.startswith(cmd) for cmd in xp_commands):
+        await process_search_command(message.author, message.content)
+
+    # This will prevent any messages starting with ! commands from counting
+    if message.content.startswith('!'):
+        await bot.process_commands(message)
+        return
+    
+    
+    user_id = message.author.id
+    user_xp_data.setdefault(user_id, 0)
+    user_xp_data[user_id] += XP_PER_MESSAGE
+
+    await check_and_assign_roles(message.author, message)
+
+    await bot.process_commands(message)
+
+async def process_search_command(author, content):
+    user_id = author.id
+    user_xp_data.setdefault(user_id, 0)
+    user_xp_data[user_id] += XP_SEARCH_REWARD
+
+
+async def check_and_assign_roles(user, message):
+    user_id = user.id
+    xp = user_xp_data.get(user_id, 0)
+
+    if xp >= 100:
+        roles = [
+            {'name': 'Novice Chef', 'xp_required': 100},
+            {'name': 'Sous Chef', 'xp_required': 400},
+            {'name': 'Culinary Artisan', 'xp_required': 600},
+            {'name': 'Gourmet Maestro', 'xp_required': 1000},
+            {'name': 'Master Chef', 'xp_required': 1500}
+        ]
+
+        for role_info in roles:
+            role_name = role_info['name']
+            xp_required = role_info['xp_required']
+
+            role = discord.utils.get(message.guild.roles, name=role_name)
+
+            if role and role not in user.roles and xp >= xp_required:
+                try:
+                    await user.add_roles(role)
+                    await message.channel.send(f'{user.mention} has leveled up to {role_name}! 🌟')
+                except Exception as e:
+                    print(f'Unable to add roles: {e}')
+
+@bot.command()
+async def search(ctx):
+    user_id = ctx.author.id
+    user_xp_data.setdefault(user_id, 0)
+    user_xp_data[user_id] += XP_SEARCH_REWARD
+    await ctx.send(f"Congratulations Chef! You earned {XP_SEARCH_REWARD} XP for recipe hunting!")
+
+@bot.command()
+async def check_xp(ctx):
+    user_id = ctx.author.id
+    xp = user_xp_data.get(user_id, 0)
+    await ctx.send(f"Your current XP: {xp}")
+
+
+@bot.event
+async def on_reaction_add(reaction, user):
+        #check make sure its not Aroma
+        if not user.bot: 
+            # award xp
+            user_id = user.id
+            user_xp_data.setdefault(user_id, 0)
+            user_xp_data[user_id] += 15
         
 
-
 #Run the bot with token
-bot.run('MTE3MTI3NTA5OTMxMjIzNDU3OQ.GmZvb3.N3JfoYTwLBSKk-yFZO9Qlzoa09_rm5tQvA28jI')
+bot.run('MTE3MTI3NTA5OTMxMjIzNDU3OQ.G2P7vA.xHlQ-DOF9KzWNQrZHZMKfiEwoZCtY50MG-70pE')
