@@ -61,7 +61,4 @@ cooking_tips = [
     "Always start with a smokin’ hot pan! - Cat Cora",
     "When baking cookies, be sure your dough is thoroughly chilled when it goes on your baking pan. This will allow the leavening ingredients to work before the butter flattens out and your cookies lose their textural distinctions. - Norman Van Aken"
     
-
-
-
 ]

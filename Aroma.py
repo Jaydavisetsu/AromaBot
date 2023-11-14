@@ -11,29 +11,12 @@ from discord.ext import commands
 import random
 from CookingTips import cooking_tips
 import requests
+import mysql.connector
 from RecipeList import Recipe_List
 from RecipeList import Seasonal_List
+from Trivia import trivia
 
 
-'''#Json Stuff
-response = requests.get('https://www.themealdb.com/api/json/v1/1/search.php?f=a')
-print(response.status_code)
-print(response.json())
-
-response_data = response.json()
-meals = response_data =['meals']
-
-for meal in meals:
-    MealName = response.json()['meals'][0]['strMeal']
-    MealCategory = response.json()['meals'][0]['strCategory']
-    MealArea = response.json()['meals'][0]['strArea']
-    MealDescription = response.json()['meals'][0]['strInstructions']
-
-    print("**Meal Name**:", MealName)
-    print("**Meal Category**:", MealCategory)
-    print("**Meal Origins**:", MealArea)
-    print("**Meal Description**:", MealDescription)
-'''
 
 response = requests.get('https://opentdb.com/api.php?amount=50')
 print(response.status_code)
@@ -42,7 +25,7 @@ print(response.json())
 response_data = response.json()
 Questions = response_data =['trivia_questions']
 
-for question in Questions:
+'''for question in Questions:
     Category = response.json()['category'][0]['category']
     Questions = response.json()['question'][0]['question']
     CorrectAnswer = response.json()['correctAnswer'][0]['correct_answer']
@@ -51,8 +34,19 @@ for question in Questions:
     print("**Category**:", Category)
     print("**Question**:", Questions)
     print("**Correct Answer**:", CorrectAnswer)
-    print("**Incorrect Answers**:", IncorrectAnswers)
+    print("**Incorrect Answers**:", IncorrectAnswers)'''
 
+
+#Connect to MySQL
+database = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="root",
+    database="Aroma_Recipes"
+)
+
+#create a cursor
+db_cursor = database.cursor()
 
 #Create a bot instance
 intents = discord.Intents.all()
@@ -61,11 +55,33 @@ intents.message_content = True
 bot = commands.Bot(intents=intents, command_prefix="!", )
 guild = bot.get_guild(1171269987525197837)
 
+ramsay_mode = False   #keep track if bot is in mode or not
+
+def in_dm():
+    async def predicate(ctx):
+        if ctx.message.channel.type == discord.ChannelType.private:
+            return True
+        else:
+            await ctx.send("Sorry, this command can only be used in a DM! 🤕")
+            return False
+    return commands.check(predicate)
+    
+
+def in_server():
+    async def predicate(ctx):
+        if ctx.message.channel.type == discord.ChannelType.text:
+            return True
+        else: 
+            await ctx.send("Sorry, this command can only be used in a server! 🤕")
+            return False
+    return commands.check(predicate)
+
 
 #Print a status message when Aroma is ready
 @bot.event
 async def on_ready(): 
     print(f'Logged in as {bot.user.name}')
+
 
 #-------------------------------------------
 #BOT COMMANDS
@@ -73,70 +89,128 @@ async def on_ready():
  #create a list of all commands users can use
 command_list = '''🍽️ **Aroma Commands** 🍽️
 Check out these command delicacies:
-• `!commands` - Display all of my usable commands at any time.
+• `!commandList` - Display all of my usable commands at any time.
 • `!bonjour` - Come say hi to me! (You could get some XP . . . just saying.) 😄
 • `!aboutAroma` - Learn more about me. 📖
 • `!tips` - Randomly unlock kitchen secrets to discover cooking tips. 🍳✨• `!tips` - Randomly unlock kitchen secrets to discover cooking tips. 🍳✨
 • `!getRecipes` - Want to find a recipe? Use this command to get our DM started! 🍕🌮 
 • `!xp` - Find out how much XP you have. 🎮
 • `!leaderboard` - Explore your XP ranking among chefs. 🏆
-
-
+• `!ramsay` - Feel the heat of Ramsay's judgment on your culinary skills. Brace yourself! 🔥
 '''
   #add more later
 
+rm_command_list = '''' 🍽️ **Gordon's Culinary Commands** 🍽️
+Check out these culinary masterpieces:
+• `!commandList` - Take a bloody look at all the commands available. Don't mess it up!
+• `!bonjour` - Say hi if you dare! Maybe you'll earn some XP... or embarrass yourself. 😄
+• `!aboutRamsay` - Discover a bit about me. If you can't, you're as lost as a lamb in a lion's den. 📖
+• `!tips` - Unveil kitchen secrets for some cooking wisdom. Handle it with finesse! 🍳✨
+• `!getRecipes` - Craving a recipe? Start a DM to get things cooking! 🍕🌮
+• `!xp` - Check your XP like a chef checks their seasoning. Don't let it be bland! 🎮
+• `!leaderboard` - See where you stand among the culinary elite. Will you rise or fall? 🏆
+• `!ramsay` - Feel the heat of Ramsay's judgment on your culinary skills. Brace yourself! 🔥
+
+'''
 #command_msg = f"Check out these command delicacies:\n" + "-----Aroma Commands-----\n" + "\n".join(command_list)
 
-
+#bot will display commands
 @bot.command()
-async def commands(ctx):
-    await ctx.send(f"{ctx.author.mention} \n {command_list}")
+@in_server()
+async def commandList(ctx):
+    if ramsay_mode is False:
+        await ctx.send(f"{ctx.author.mention} \n {command_list}")
+    if ramsay_mode is True:
+        await ctx.send(f"{ctx.author.mention} what you need me for everything you bloody oaf? \n {rm_command_list}")
+ 
 
 #bot will say bonjour
 @bot.command()
+@in_server()
 async def bonjour(ctx): 
-    await ctx.send(f'Bonjour {ctx.author.mention}! :3')
+        if ramsay_mode is False:
+            await ctx.send(f'Bonjour {ctx.author.mention}! :3')
 
-    await ctx.message.add_reaction('❤️')
+            await ctx.message.add_reaction('❤️')
+        if ramsay_mode is True:
+                await ctx.send(f'You come from stupid town {ctx.author.mention}?')
+
 
 #bot will provide mission statement
 @bot.command() 
+@in_server()
 async def aboutAroma(ctx): 
-    mission_statement = (
-        "🍽️ **Mission Statement** 🍽️\n\n"
-        "As the Aroma bot, my goal is to take you on a culinary adventure like no other. 🌮🍕🍜\n\n"
-        "📚 **What I Bring to the Table** 📚\n"
-        "Discover a world of delightful recipes. Save your favorites. Share with friends.\n"
-        "Simplify your cooking experience with a vast recipe database. Find recipes based on ingredients, names, or origins. 🌎🥘🍳\n\n"
-        "🎮 **The Secret Ingredient** 🎮\n"
-        "I bring a game-like atmosphere to the kitchen! Earn achievement badges 🏅, gain experience points, top the leaderboards 📊,\n"
-        "enjoy features like recipe roulette 🎲 and fun recipe quizzes ❓.\n\n"
-        "🍁🌻 **Seasonal Recommendations** 🌞❄️\n"
-        "Stay fresh with my seasonal recipe suggestions that match the current season. 🍁🌻\n\n"
-        "Ready to embark on a flavorful journey with me? 😊"
-    )
-    await ctx.send(f"{ctx.author.mention} \n {mission_statement}")
+    if ramsay_mode is False:
+        mission_statement = (
+            "🍽️ **Mission Statement** 🍽️\n\n"
+            "As the Aroma bot, my goal is to take you on a culinary adventure like no other. 🌮🍕🍜\n\n"
+            "📚 **What I Bring to the Table** 📚\n"
+            "Discover a world of delightful recipes. Save your favorites. Share with friends.\n"
+            "Simplify your cooking experience with a vast recipe database. Find recipes based on ingredients, names, or origins. 🌎🥘🍳\n\n"
+            "🎮 **The Secret Ingredient** 🎮\n"
+            "I bring a game-like atmosphere to the kitchen! Earn achievement badges 🏅, gain experience points, top the leaderboards 📊,\n"
+            "enjoy features like recipe roulette 🎲 and fun recipe quizzes ❓.\n\n"
+            "🍁🌻 **Seasonal Recommendations** 🌞❄️\n"
+            "Stay fresh with my seasonal recipe suggestions that match the current season. 🍁🌻\n\n"
+            "Ready to embark on a flavorful journey with me? 😊"
+        )
+        await ctx.send(f"{ctx.author.mention} \n {mission_statement}")
+
+    if ramsay_mode is True:
+        rm_mission_statement = (
+            "🍽️ **Bloody Mission Statement** 🍽️\n\n"
+            "As the Aroma bot, my goal is to take you on a culinary adventure that will blow your socks off! 🌮🍕🍜\n\n"
+            "📚 **What I Bring to the Damn Table** 📚\n"
+            "Discover a world of bloody delightful recipes. Save your favorites. Share with friends. Don't be a donkey in the kitchen!\n"
+            "Simplify your cooking experience (because its not a secrect you suck at it.) with a vast recipe database. Find recipes based on ingredients, names, or origins. 🌎🥘🍳\n\n"
+            "🎮 **The Secret Ingredient** 🎮\n"
+            "I'm Gordon fucking Ramsay I bring something to the table that others cant. Me! Earn achievement badges 🏅, gain experience points, top the leaderboards 📊,\n"
+            "enjoy features like recipe roulette 🎲 and fun recipe quizzes ❓. It's not a game, it's a culinary challenge!\n\n"
+            "🍁🌻 **Seasonal Recommendations** 🌞❄️\n"
+            "Stay fresh with my bloody seasonal recipe suggestions that match the current season. Don't be a donkey; follow the seasons! 🍁🌻\n\n"
+            "A little naunce like you wont last that long. Get in there and cook like your life depends on it!"
+        )
+        await ctx.send(f"{ctx.author.mention} \n {rm_mission_statement}")
 
 #bot will randomly display tips
 @bot.command()
+@in_server()
 async def tips(ctx): 
     origin_channel = bot.get_channel(1171269987525197837)
 
-    if origin_channel:
-        random_tip = random.choice(cooking_tips)
-        last_hyphen_index = random_tip.rfind('-')  # Find the last hyphen
-        if last_hyphen_index != -1:
-            tip = random_tip[:last_hyphen_index].strip()  # Extract the tip
-            author = random_tip[last_hyphen_index + 1:].strip()  # Extract the author
-            tip_message = f"🍳 **Cooking Tip** 🍳\n\n**Tip**: {tip}\n\n**Author**: {author}"
-            await ctx.send(f"{ctx.author.mention}, \n {tip_message}")
+    if ramsay_mode is False:
+            if origin_channel:
+                random_tip = random.choice(cooking_tips)
+                last_hyphen_index = random_tip.rfind('-')  # Find the last hyphen
+                if last_hyphen_index != -1:
+                    tip = random_tip[:last_hyphen_index].strip()  # Extract the tip
+                    author = random_tip[last_hyphen_index + 1:].strip()  # Extract the author
+                    tip_message = f"🍳 **Cooking Tip** 🍳\n\n**Tip**: {tip}\n\n**Author**: {author}"
+                    await ctx.send(f"{ctx.author.mention}, \n {tip_message}")
+
+    if ramsay_mode is True:
+        rm_tips_list = [
+            "If it tastes bad, then it probably is bad, mate.",
+            "Cook as if I'm yelling at you and your mum is watching it happen. Don't fuck up.",
+            "You can never cook as good as your mum.",
+            "Maybe its time you pick up a different hobby. Something that DOESNT involve being in the kitchen.",
+            "You could be my next star of Kitchen Nightmares, my word.",
+            "I wouldnt even feed a homeless man this rubbish good god man.",
+            "Just leave before I get pissed."
+            ]
+        rm_random_tip = random.choice(rm_tips_list)
+        await ctx.channel.send(f"{ctx.author.mention}, {rm_random_tip}")
+ 
         
 #uhhh bot will do something    
 @bot.command()
+@in_server()
 async def recipelist(ctx): 
  await ctx.send(f"{ctx.author.mention} \n {Recipe_List}")
 
+#bot will uhh do something
 @bot.command()
+@in_server()
 async def seasonallist(ctx): 
  await ctx.send(f"{ctx.author.mention} \n {Seasonal_List}")
 
@@ -165,30 +239,68 @@ async def getRecipes(ctx):
 
 #bot will search by ingredient
 @bot.command()
+@in_dm()
 async def searchByIngredient(ctx):
     await ctx.send("Search is unavailable.")
 
 #bot will search by cuisine
 @bot.command()
+@in_dm()
 async def searchByCuisine(ctx):
     await ctx.send("Search is unavailable.")
 
 #bot will search by dish name
 @bot.command()
-async def searchByName(ctx):
-    await ctx.send("Search is unavailable.")
+@in_dm()
+async def searchByName(ctx, *, recipe_name:str):
+   query = "SELECT * FROM Recipes WHERE recipe_name LIKE %s"
+   db_cursor.execute(query, ("%" + recipe_name + "%",))
+    
+   results = db_cursor.fetchall()
+
+   if results:
+        for result in results:
+            recipe_id, recipe_name, ingredients, instructions, cuisine, category, seasonal = result
+            # Format and send the recipe information
+            ingredients_list = ingredients.split(',')
+            formatted_ingredients = "\n".join([f"\n• {ingredient.strip()}" for ingredient in ingredients_list])
+
+            instructions_list = instructions.split('.')
+            formatted_instructions = "\n".join([f"\n• {instruction.strip()}" for instruction in instructions_list])
+
+        response = discord.Embed(
+            title=f"{recipe_name}",
+            description=(
+                f"**Recipe ID**: {recipe_id}\n"
+                f"**Recipe Name**: {recipe_name}\n"
+                f"**Ingredients**: {formatted_ingredients}\n\n"
+                f"**Instructions**: {formatted_instructions}\n\n"
+                f"**Cuisine**: {cuisine}\n"
+                f"**Category**: {category}\n"
+                f"**Seasonal**: {seasonal or 'N/A'}"
+            ),
+            color=0x177E89
+        )
+        await ctx.send(embed=response)
+   else: 
+       await ctx.send("I couldn't find that recipe!")
+
 
 #bot will search by category
 @bot.command()
+@in_dm()
 async def searchByCategory(ctx):
     await ctx.send("Search is unavailable.")
 
 #bot will display seasonal recipe
 @bot.command()
+@in_dm()
 async def seasonalRecipe(ctx):
     await ctx.send("Unavailable.")
 
+#bot will display a users xp
 @bot.command()
+@in_server()
 async def xp(ctx, member: discord.Member = None):
     if not member:
         member = ctx.author
@@ -198,7 +310,9 @@ async def xp(ctx, member: discord.Member = None):
 
     await ctx.send(f"{member.display_name} has {xp} XP!")
 
+#bot will display leaderboard[s]
 @bot.command()
+@in_server()
 async def leaderboard(ctx):
     # Sort users by XP in descending order
     users = ctx.guild.members
@@ -213,6 +327,24 @@ async def leaderboard(ctx):
         leaderboard_msg += f"{index}. {user.display_name}: {xp} XP\n"
     # Send the leaderboard to the channel
     await ctx.send(leaderboard_msg)
+
+#bot will become Gordon Ramsay
+@bot.command()
+async def ramsay(ctx):
+
+    global ramsay_mode
+    #toggle mode
+    ramsay_mode = not ramsay_mode
+    nickname = "Gordon Ramsay" if ramsay_mode else "Aroma"
+    await ctx.guild.me.edit(nick=nickname) #Change bot name
+    
+    if ramsay_mode: 
+        ramsay_mode = True
+        await ctx.send("Ramsay's in charge now. Sort yourselves out or get the fuck out the kitchen.")
+    else:
+        ramsay_mode = False
+        await ctx.send("Gordon Ramsay left because he thought your cooking was terrible.")
+     
 
 #-------------------------------------------
 #BOT EVENTS
@@ -275,6 +407,23 @@ async def on_message(message):
         await bot.process_commands(message)
         return
     
+    #check if GR mode is on
+    if ramsay_mode: 
+
+        insults = [
+            "You fucking cunt, you suck",
+            "Bitch this is flavorless",
+            "ITS RAW.",
+            "Did you cook this with your eyes closed?",
+            "You're not a chef; you're an embarrassment"
+        ]
+
+        random_insult = random.choice(insults)
+        await message.channel.send(f"{message.author.mention}, {random_insult}")
+    else: 
+        #continue normally
+        await bot.process_commands(message)
+        
     
     user_id = message.author.id
     user_xp_data.setdefault(user_id, 0)
@@ -283,6 +432,8 @@ async def on_message(message):
     await check_and_assign_roles(message.author, message)
 
     await bot.process_commands(message)
+
+
 
 async def process_search_command(author, content):
     user_id = author.id
@@ -314,22 +465,18 @@ async def check_and_assign_roles(user, message):
                     await user.add_roles(role)
                     await message.channel.send(f'{user.mention} has leveled up to {role_name}! 🌟')
                 except Exception as e:
-                    print(f'Unable to add roles: {e}')
+                    print(f'Unable to add roles: {e}')   
 
-@bot.command()
+
+
+@bot.command()  #what is this for? We might be able to delete this...
 async def search(ctx):
     user_id = ctx.author.id
     user_xp_data.setdefault(user_id, 0)
     user_xp_data[user_id] += XP_SEARCH_REWARD
     await ctx.send(f"Congratulations Chef! You earned {XP_SEARCH_REWARD} XP for recipe hunting!")
 
-@bot.command()
-async def check_xp(ctx):
-    user_id = ctx.author.id
-    xp = user_xp_data.get(user_id, 0)
-    await ctx.send(f"Your current XP: {xp}")
-
-
+#bot wil add xp to a user if they react to a message
 @bot.event
 async def on_reaction_add(reaction, user):
         #check make sure its not Aroma
@@ -341,4 +488,4 @@ async def on_reaction_add(reaction, user):
         
 
 #Run the bot with token
-bot.run('MTE3MTI3NTA5OTMxMjIzNDU3OQ.G2P7vA.xHlQ-DOF9KzWNQrZHZMKfiEwoZCtY50MG-70pE')
+bot.run('MTE3MTI3NTA5OTMxMjIzNDU3OQ.G94xZe.6zAvFF1OOgPUJCuIdJta9f-ncBdEBiQEMo7tVc')

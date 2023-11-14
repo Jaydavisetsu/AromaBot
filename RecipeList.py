@@ -11,7 +11,7 @@ Document Name: RecipeAdding.py
 
 
 Recipe_List = (
-    "**Source(s): https://www.themealdb.com/api/json/v1/1/search.php?f=a **"
+    "**Source(s): https://www.themealdb.com/api/json/v1/1/search.php?f=a **\n"
     "**1. Spicy Arrabiata Penne**\n "
     "*Vegetarian, Italian Dish.*\n"
     "**Ingredients:** penne rigate, olive oil, garlic, chopped tomatoes, red chile flakes, italian seasoning, basil, parmigiano-reggiano \n"
@@ -33,7 +33,7 @@ Recipe_List = (
 )
 
 Seasonal_List = (
-    "**Source(s): https://brownedbutterblondie.com/category/food/ \n**"
+    "**Source(s): https://brownedbutterblondie.com/category/food/ **\n"
     "**1. Soft & Chewy Sugar Cookies**\n"
     "*Dessert, Persian*\n"
     "**Ingredients**: flour, butter, sugar, eggs, baking soda, baking powder, vanilla extract\n"
