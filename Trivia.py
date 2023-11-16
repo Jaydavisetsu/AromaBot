@@ -8,15 +8,21 @@ Trivia questions based on different categories..multiple choice
 
 '''
 
-import discord 
-from discord.ext import commands
+
+#from discord.ext import commands
 import requests
 
 
-intents = discord.Intents.all()
-intents.members = True
-intents.message_content = True
-bot = commands.Bot(intents=intents, command_prefix="!", )
+def fetch_trivia_data():
+
+    response = requests.get('https://opentdb.com/api.php?amount=50')
+    
+    if response.status_code == 200:
+        # Assuming the API response is in JSON format
+        trivia_data = response.json()
+        return trivia_data
+    else:
+        return None
 
 def get_trivia_questions(api_url):
     try:
@@ -37,16 +43,6 @@ async def display_trivia_questions(trivia_data, ctx):
             message += "\n".join(options)
             await ctx.send(message)
 
-@bot.command()
-async def trivia(ctx, num_questions: int = 1):
-    # Request the API link with the specified number of questions
-    api_url = f"https://opentdb.com/api.php?amount={num_questions}"
-
-    # Get trivia questions
-    trivia_data = get_trivia_questions(api_url)
-
-    # Display trivia questions
-    await display_trivia_questions(trivia_data, ctx)
 
 
 '''

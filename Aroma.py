@@ -14,16 +14,9 @@ import requests
 import mysql.connector
 from RecipeList import Recipe_List
 from RecipeList import Seasonal_List
-from Trivia import trivia
+from Trivia import get_trivia_questions, display_trivia_questions, fetch_trivia_data
 
 
-
-response = requests.get('https://opentdb.com/api.php?amount=50')
-print(response.status_code)
-print(response.json())
-
-response_data = response.json()
-Questions = response_data =['trivia_questions']
 
 '''for question in Questions:
     Category = response.json()['category'][0]['category']
@@ -225,12 +218,14 @@ async def getRecipes(ctx):
         initial_msg = (
         "🍲 **Welcome to the Recipe Search!**🍳\n\n"
         "** [NOTE]: Replace <ingredient> with YOUR ingredient . . .(e.g. Broccoli) ** \n"
+        "**[EXAMPLE]: !ingredients Milk Broth Cheese** \n "
+        "**[EXAMPLE]: !seasonalRecipe winter** \n"
         "To search for a recipe, use the following commands:\n"
-        "- `!searchByIngredient <ingredient>` - Search recipes by ingredients you have on hand 🥦\n"
-        "- `!searchByCuisine <cuisine>` - Search recipes by cuisines from all over the world! 🌎\n"
-        "- `!searchByName <name>` - Search recipes by name (e.g. Apple Pie) 🍽️\n"
-        "- `!searchByCategory <category>` - Search recipes based on category (e.g. seafood, pork, beef, etc.)\n"
-        "- `!seasonalRecipe` - Stay updated with trending seasonal dishes! 🎲\n"
+        "- `!ingredients <ingredient>` - Search recipes by ingredients you have on hand 🥦\n"
+        "- `!cuisine <cuisine>` - Search recipes by cuisines from all over the world! 🌎\n"
+        "- `!dishName <name>` - Search recipes by name (e.g. Apple Pie) 🍽️\n"
+        "- `!category <category>` - Search recipes based on category (e.g. seafood, pork, beef, etc.)\n"
+        "- `!seasonalRecipes <season>` - Stay updated by searching seasonal dishes! 🎲\n"
 
         )
         #send the dm 
@@ -240,21 +235,118 @@ async def getRecipes(ctx):
 #bot will search by ingredient
 @bot.command()
 @in_dm()
-async def searchByIngredient(ctx):
-    await ctx.send("Search is unavailable.")
+async def ingredients(ctx, *ingredients):
+    user_input = ", ".join(ingredients).lower()
+
+    query = "SELECT * FROM Recipes WHERE "
+    for ingredient in ingredients:
+        query += f"ingredients LIKE '%{ingredient.lower()}%' AND "
+    query = query[:-5]
+    
+    db_cursor.execute(query)
+    results = db_cursor.fetchall()
+
+    if results: 
+        for result in results:
+                recipe_id, recipe_name, ingredients, instructions, cuisine, category, seasonal = result
+                # Format and send the recipe information
+                ingredients_list = ingredients.split(',')
+                formatted_ingredients = "\n".join([f"\n• {ingredient.strip()}" for ingredient in ingredients_list])
+
+                instructions_list = instructions.split('.')
+                formatted_instructions = "\n".join([f"\n• {instruction.strip()}" for instruction in instructions_list])
+
+                response = discord.Embed(
+                title=f"{recipe_name}",
+                description=(
+                    f"**Recipe ID**: {recipe_id}\n"
+                    f"**Recipe Name**: {recipe_name}\n"
+                    f"**Ingredients**: {formatted_ingredients}\n\n"
+                    f"**Instructions**: {formatted_instructions}\n\n"
+                    f"**Cuisine**: {cuisine}\n"
+                    f"**Category**: {category}\n"
+                    f"**Seasonal**: {seasonal or 'N/A'}"
+                ),
+                color=0x177E89
+            )
+        await ctx.send(embed=response)
+    else: 
+        await ctx.send("I couldn't find that recipe!")
+    #will send the message after the search is complete
+    user = ctx.author 
+    initial_msg = (
+         "🍲 **Welcome to the Recipe Search!**🍳\n\n"
+        "** [NOTE]: Replace <ingredient> with YOUR ingredient . . .(e.g. Broccoli) ** \n"
+        "**[EXAMPLE]: !ingredients Milk Broth Cheese** \n "
+        "**[EXAMPLE]: !seasonalRecipe winter** \n"
+        "To search for a recipe, use the following commands:\n"
+        "- `!ingredients <ingredient>` - Search recipes by ingredients you have on hand 🥦\n"
+        "- `!cuisine <cuisine>` - Search recipes by cuisines from all over the world! 🌎\n"
+        "- `!dishName <name>` - Search recipes by name (e.g. Apple Pie) 🍽️\n"
+        "- `!category <category>` - Search recipes based on category (e.g. seafood, pork, beef, etc.)\n"
+        "- `!seasonalRecipes <season>` - Stay updated by searching seasonal dishes! 🎲\n"
+    )
+    await user.send(initial_msg)
+
 
 #bot will search by cuisine
 @bot.command()
 @in_dm()
-async def searchByCuisine(ctx):
-    await ctx.send("Search is unavailable.")
+async def cuisine(ctx, *, cuisine):
+
+    query = "SELECT * FROM Recipes WHERE cuisine = %s"
+    db_cursor.execute(query, (cuisine,))
+
+    results = db_cursor.fetchall()
+
+    if results: 
+        for result in results:
+            recipe_id, recipe_name, ingredients, instructions, cuisine, category, seasonal = result
+            # Format and send the recipe information
+            ingredients_list = ingredients.split(',')
+            formatted_ingredients = "\n".join([f"\n• {ingredient.strip()}" for ingredient in ingredients_list])
+
+            instructions_list = instructions.split('.')
+            formatted_instructions = "\n".join([f"\n• {instruction.strip()}" for instruction in instructions_list])
+
+        response = discord.Embed(
+            title=f"{recipe_name}",
+            description=(
+                f"**Recipe ID**: {recipe_id}\n"
+                f"**Recipe Name**: {recipe_name}\n"
+                f"**Ingredients**: {formatted_ingredients}\n\n"
+                f"**Instructions**: {formatted_instructions}\n\n"
+                f"**Cuisine**: {cuisine}\n"
+                f"**Category**: {category}\n"
+                f"**Seasonal**: {seasonal or 'N/A'}"
+            ),
+            color=0x177E89
+        )
+        await ctx.send(embed=response)
+    else: 
+       await ctx.send("I couldn't find any recipes!")
+
+    user = ctx.author 
+    initial_msg = (
+         "🍲 **Welcome to the Recipe Search!**🍳\n\n"
+        "** [NOTE]: Replace <ingredient> with YOUR ingredient . . .(e.g. Broccoli) ** \n"
+        "**[EXAMPLE]: !ingredients Milk Broth Cheese** \n "
+        "**[EXAMPLE]: !seasonalRecipe winter** \n"
+        "To search for a recipe, use the following commands:\n"
+        "- `!ingredients <ingredient>` - Search recipes by ingredients you have on hand 🥦\n"
+        "- `!cuisine <cuisine>` - Search recipes by cuisines from all over the world! 🌎\n"
+        "- `!dishName <name>` - Search recipes by name (e.g. Apple Pie) 🍽️\n"
+        "- `!category <category>` - Search recipes based on category (e.g. seafood, pork, beef, etc.)\n"
+        "- `!seasonalRecipes <season>` - Stay updated by searching seasonal dishes! 🎲\n"
+    )
+    await user.send(initial_msg)
 
 #bot will search by dish name
 @bot.command()
 @in_dm()
-async def searchByName(ctx, *, recipe_name:str):
+async def dishName(ctx, *, recipe_name:str):
    query = "SELECT * FROM Recipes WHERE recipe_name LIKE %s"
-   db_cursor.execute(query, ("%" + recipe_name + "%",))
+   db_cursor.execute(query, ("%" + recipe_name.lower() + "%",))
     
    results = db_cursor.fetchall()
 
@@ -283,20 +375,132 @@ async def searchByName(ctx, *, recipe_name:str):
         )
         await ctx.send(embed=response)
    else: 
-       await ctx.send("I couldn't find that recipe!")
-
+       await ctx.send("I couldn't find any recipes!")
+       
+   user = ctx.author 
+   initial_msg = (
+         "🍲 **Welcome to the Recipe Search!**🍳\n\n"
+        "** [NOTE]: Replace <ingredient> with YOUR ingredient . . .(e.g. Broccoli) ** \n"
+        "**[EXAMPLE]: !ingredients Milk Broth Cheese** \n "
+        "**[EXAMPLE]: !seasonalRecipe winter** \n"
+        "To search for a recipe, use the following commands:\n"
+        "- `!ingredients <ingredient>` - Search recipes by ingredients you have on hand 🥦\n"
+        "- `!cuisine <cuisine>` - Search recipes by cuisines from all over the world! 🌎\n"
+        "- `!dishName <name>` - Search recipes by name (e.g. Apple Pie) 🍽️\n"
+        "- `!category <category>` - Search recipes based on category (e.g. seafood, pork, beef, etc.)\n"
+        "- `!seasonalRecipes <season>` - Stay updated by searching seasonal dishes! 🎲\n"
+    )
+   await user.send(initial_msg)
 
 #bot will search by category
 @bot.command()
 @in_dm()
-async def searchByCategory(ctx):
-    await ctx.send("Search is unavailable.")
+async def category(ctx, *, categories):
+    categories_list = categories.lower().split()  # Split input into a list of categories
+
+    query = "SELECT * FROM Recipes WHERE "
+    for category in categories_list:
+        query += f"category LIKE '%{category}%' OR "
+
+    query = query[:-4]  # Remove the trailing ' OR ' from the query
+
+    db_cursor.execute(query)
+    results = db_cursor.fetchall()
+
+    if results:
+        for result in results:
+            recipe_id, recipe_name, ingredients, instructions, cuisine, cat, seasonal = result
+            # Format and send the recipe information
+            ingredients_list = ingredients.split(',')
+            formatted_ingredients = "\n".join([f"\n• {ingredient.strip()}" for ingredient in ingredients_list])
+
+            instructions_list = instructions.split('.')
+            formatted_instructions = "\n".join([f"\n• {instruction.strip()}" for instruction in instructions_list])
+
+            response = discord.Embed(
+                title=f"{recipe_name}",
+                description=(
+                    f"**Recipe ID**: {recipe_id}\n"
+                    f"**Recipe Name**: {recipe_name}\n"
+                    f"**Ingredients**: {formatted_ingredients}\n\n"
+                    f"**Instructions**: {formatted_instructions}\n\n"
+                    f"**Cuisine**: {cuisine}\n"
+                    f"**Category**: {cat}\n"
+                    f"**Seasonal**: {seasonal or 'N/A'}"
+                ),
+                color=0x177E89
+            )
+            await ctx.send(embed=response)
+    else:
+        await ctx.send("I couldn't find any recipes!")
+
+    user = ctx.author 
+    initial_msg = (
+         "🍲 **Welcome to the Recipe Search!**🍳\n\n"
+        "** [NOTE]: Replace <ingredient> with YOUR ingredient . . .(e.g. Broccoli) ** \n"
+        "**[EXAMPLE]: !ingredients Milk Broth Cheese** \n "
+        "**[EXAMPLE]: !seasonalRecipe winter** \n"
+        "To search for a recipe, use the following commands:\n"
+        "- `!ingredients <ingredient>` - Search recipes by ingredients you have on hand 🥦\n"
+        "- `!cuisine <cuisine>` - Search recipes by cuisines from all over the world! 🌎\n"
+        "- `!dishName <name>` - Search recipes by name (e.g. Apple Pie) 🍽️\n"
+        "- `!category <category>` - Search recipes based on category (e.g. seafood, pork, beef, etc.)\n"
+        "- `!seasonalRecipes <season>` - Stay updated by searching seasonal dishes! 🎲\n"
+    )
+    await user.send(initial_msg)
 
 #bot will display seasonal recipe
 @bot.command()
 @in_dm()
-async def seasonalRecipe(ctx):
-    await ctx.send("Unavailable.")
+async def seasonalRecipes(ctx, *, seasonal_input):
+    query = "SELECT * FROM Recipes WHERE seasonal = %s"
+    db_cursor.execute(query, (seasonal_input.lower(),))
+   
+    results = db_cursor.fetchall()
+
+    if results:
+        for result in results:
+            recipe_id, recipe_name, ingredients, instructions, cuisine, category, seasonal = result
+            # Format and send the recipe information
+            ingredients_list = ingredients.split(',')
+            formatted_ingredients = "\n".join([f"\n• {ingredient.strip()}" for ingredient in ingredients_list])
+
+            instructions_list = instructions.split('.')
+            formatted_instructions = "\n".join([f"\n• {instruction.strip()}" for instruction in instructions_list])
+
+            response = discord.Embed(
+                title=f"{recipe_name}",
+                description=(
+                    f"**Recipe ID**: {recipe_id}\n"
+                    f"**Recipe Name**: {recipe_name}\n"
+                    f"**Ingredients**: {formatted_ingredients}\n\n"
+                    f"**Instructions**: {formatted_instructions}\n\n"
+                    f"**Cuisine**: {cuisine}\n"
+                    f"**Category**: {category}\n"
+                    f"**Seasonal**: {seasonal or 'N/A'}"
+                ),
+                color=0x177E89
+            )
+            await ctx.send(embed=response)
+    else: 
+        await ctx.send("I couldn't find any recipes!")
+
+    user = ctx.author 
+    initial_msg = (
+         "🍲 **Welcome to the Recipe Search!**🍳\n\n"
+        "** [NOTE]: Replace <ingredient> with YOUR ingredient . . .(e.g. Broccoli) ** \n"
+        "**[EXAMPLE]: !ingredients Milk Broth Cheese** \n "
+        "**[EXAMPLE]: !seasonalRecipe winter** \n"
+        "To search for a recipe, use the following commands:\n"
+        "- `!ingredients <ingredient>` - Search recipes by ingredients you have on hand 🥦\n"
+        "- `!cuisine <cuisine>` - Search recipes by cuisines from all over the world! 🌎\n"
+        "- `!dishName <name>` - Search recipes by name (e.g. Apple Pie) 🍽️\n"
+        "- `!category <category>` - Search recipes based on category (e.g. seafood, pork, beef, etc.)\n"
+        "- `!seasonalRecipes <season>` - Stay updated by searching seasonal dishes! 🎲\n"
+    )
+    await user.send(initial_msg)
+
+
 
 #bot will display a users xp
 @bot.command()
@@ -308,7 +512,7 @@ async def xp(ctx, member: discord.Member = None):
     user_id = member.id
     xp = user_xp_data.get(user_id, 0)
 
-    await ctx.send(f"{member.display_name} has {xp} XP!")
+    await ctx.send(f"Chef {member.display_name} has a total of {xp} XP!")
 
 #bot will display leaderboard[s]
 @bot.command()
@@ -345,8 +549,33 @@ async def ramsay(ctx):
         ramsay_mode = False
         await ctx.send("Gordon Ramsay left because he thought your cooking was terrible.")
      
+#trivia commands here! ----------------------------
 
+@bot.command()
+async def trivia(ctx, num_questions: int = 1):
+    # Request the API link with the specified number of questions
+    api_url = f"https://opentdb.com/api.php?amount={num_questions}"
+
+    # Get trivia questions
+    trivia_data = get_trivia_questions(api_url)
+
+    # Display trivia questions
+    await display_trivia_questions(trivia_data, ctx)
+
+@bot.command()
+async def answer(trivia_data, ctx):
+    if trivia_data:
+        correct_answer = trivia_data['results'][0]['correct_answer']
+        incorrect_answers = trivia_data['results'][0]['incorrect_answers']
+
+        formatted_answers = f"Correct Answer: {correct_answer}\nIncorrect Answers: {', '.join(incorrect_answers)}"
+
+        await ctx.send(formatted_answers)
+    else:
+        await ctx.send("Failed to fetch trivia data from the API.")
 #-------------------------------------------
+
+
 #BOT EVENTS
 
 #List of Welcome Messages
@@ -488,4 +717,4 @@ async def on_reaction_add(reaction, user):
         
 
 #Run the bot with token
-bot.run('MTE3MTI3NTA5OTMxMjIzNDU3OQ.G94xZe.6zAvFF1OOgPUJCuIdJta9f-ncBdEBiQEMo7tVc')
+bot.run('MTE3MTI3NTA5OTMxMjIzNDU3OQ.GPAhSh.LebDJDmlbYD2a3OZfJwAxLeaUZ-fWkrYvbmSos')
