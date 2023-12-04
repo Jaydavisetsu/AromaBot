@@ -15,6 +15,7 @@ import mysql.connector
 from RecipeList import Recipe_List
 from RecipeList import Seasonal_List
 from Trivia import get_trivia_questions, display_trivia_questions, fetch_trivia_data
+import random as ra
 
 
 
@@ -574,7 +575,26 @@ async def answer(trivia_data, ctx):
     else:
         await ctx.send("Failed to fetch trivia data from the API.")
 #-------------------------------------------
+#Recipe Roulette Stuff
 
+@bot.command()
+async def roulette(ctx): 
+    recipeslist = [
+    "I have chosen...\n Chicken Alfredo ! Try not to make it bland. \n https://www.delish.com/cooking/recipe-ideas/a53695/one-pot-chicken-alfredo-recipe/",
+    "You want breakfast for dinner? WELL too bad thats what i picked. \n Now go make some Blueberry pancakes \n https://pinchofyum.com/fluffiest-blueberry-pancakes",
+    "Starve. Just kidding, but im giving you something complex to make this time. Macarons. Its easy to mess up so do be careful :). \n https://preppykitchen.com/french-macarons/",
+    "Beef Wellington. Make Ramsay proud!! \n https://www.gordonramsay.com/gr/recipes/beef-wellington/",
+    "*poof!* hm? A wild cookie recipe appears?!... \n https://natashaskitchen.com/white-chocolate-cranberry-cookies/",
+    "Bet youve never made sushi before huh? \n https://www.delish.com/cooking/recipe-ideas/g40785924/sushi-recipes/",
+    "Ask your mom cook for I'm not helping you this time. Sorry not sorry.",
+    "Time to switch things up, dont be scared to try it either. \n https://cafedelites.com/butter-chicken/",
+    "I think you would love this one! Or not who knows maybe you just have bad taste... \n https://cafedelites.com/chili-garlic-butter-shrimp/",
+    "Hope you got a few mouths to feed with this one buddy. Unless of course your just being extremely greedy... Not judging or anything... \n https://cafedelites.com/slow-cooker-chili/",
+    "Who doesnt like a good Fajita huh? https://cafedelites.com/chili-lime-steak-fajitas/",
+    ]
+
+    response = ra.choice(recipeslist) 
+    await ctx.send(response)
 
 #BOT EVENTS
 
